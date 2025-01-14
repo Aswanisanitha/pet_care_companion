@@ -68,7 +68,7 @@ class FirstPage extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               fixedSize: const Size(200, 40),
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.deepOrange,
             ),
             onPressed: () {
               Navigator.push(
@@ -80,7 +80,7 @@ class FirstPage extends StatelessWidget {
             },
             child: const Text(
               "Sign Up",
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(color: Colors.black, fontSize: 18),
             ),
           ),
           const SizedBox(height: 40),

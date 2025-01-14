@@ -1,7 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/account.dart';
+import 'package:pet_care_companion/activity.dart';
+import 'package:pet_care_companion/addpet.dart';
+import 'package:pet_care_companion/addphoto.dart';
+import 'package:pet_care_companion/allpet.dart';
+import 'package:pet_care_companion/changepswd.dart';
+
+import 'package:pet_care_companion/complaint.dart';
+import 'package:pet_care_companion/editprofile.dart';
+import 'package:pet_care_companion/feedback.dart';
+import 'package:pet_care_companion/food.dart';
+import 'package:pet_care_companion/home.dart';
+import 'package:pet_care_companion/hospital.dart';
 import 'package:pet_care_companion/login.dart';
+import 'package:pet_care_companion/myappointments.dart';
+import 'package:pet_care_companion/mycomplaints.dart';
+import 'package:pet_care_companion/myprofile.dart';
+import 'package:pet_care_companion/petgallery.dart';
+import 'package:pet_care_companion/petprofile.dart';
 import 'package:pet_care_companion/registration.dart';
 import 'package:pet_care_companion/start.dart';
+import 'package:pet_care_companion/traning.dart';
+import 'package:pet_care_companion/vaccination.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -23,6 +43,6 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: FirstPage());
+    return MaterialApp(home: HomeScreen());
   }
 }

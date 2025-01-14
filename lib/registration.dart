@@ -27,6 +27,7 @@ class _RegistrationState extends State<Registration> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
   List<Map<String, dynamic>> Districtlist = [];
+
   Future<void> fetchdistrict() async {
     try {
       final response = await supabase.from('Admin_tbl_district').select();
@@ -57,7 +58,6 @@ class _RegistrationState extends State<Registration> {
 
   Future<void> _reg() async {
     try {
-      // Step 1: Sign up with Supabase Authentication
       final AuthResponse response = await supabase.auth.signUp(
         email: email.text,
         password: password.text,
@@ -72,20 +72,17 @@ class _RegistrationState extends State<Registration> {
       }
 
       final User? user = response.user;
-      // print(user);
 
       if (user == null) {
         print('Sign up error: $user');
       } else {
         final String userId = user.id;
 
-        // Step 2: Upload profile photo (if selected)
         String? photoUrl;
         if (_image != null) {
           photoUrl = await _uploadImage(_image!, userId);
         }
 
-        // Step 3: Insert user details into `tbl_user`
         await supabase.from('Guest_tbl_userreg').insert({
           'user_id': userId,
           'user_photo': photoUrl,
@@ -129,7 +126,6 @@ class _RegistrationState extends State<Registration> {
 
       await supabase.storage.from('petcare').upload(fileName, image);
 
-      // Get public URL of the uploaded image
       final imageUrl = supabase.storage.from('petcare').getPublicUrl(fileName);
       return imageUrl;
     } catch (e) {
@@ -148,292 +144,120 @@ class _RegistrationState extends State<Registration> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Registration"),
-        backgroundColor: Color.fromARGB(255, 247, 247, 247),
+        backgroundColor: Colors.deepOrange.shade900,
+        title: const Text('Registration',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
-      body: Stack(
-        children: [
-          // Background image
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/sign.png"),
-                fit: BoxFit
-                    .cover, // Ensure the image covers the entire background
-              ),
-            ),
-          ),
-          // Semi-transparent overlay
-          Container(
-            color: Colors.black
-                .withOpacity(0.3), // Adjust the opacity for desired effect
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Form(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Center(
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: Stack(
-                          alignment: Alignment
-                              .center, // Aligns the camera icon at the center
-                          children: [
-                            CircleAvatar(
-                              radius: 50,
-                              backgroundColor:
-                                  const Color.fromARGB(95, 193, 169, 169),
-                              backgroundImage: _image != null
-                                  ? FileImage(_image!)
-                                  : const AssetImage('assets/user.png')
-                                      as ImageProvider,
-                            ),
-                            if (_image ==
-                                null) // Show the camera icon only if no image is uploaded
-                              const Icon(
-                                Icons.camera_alt,
-                                color: Color.fromARGB(255, 255, 255, 255),
-                                size: 30,
-                              ),
-                          ],
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Form(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Center(
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor:
+                              const Color.fromARGB(95, 193, 169, 169),
+                          backgroundImage: _image != null
+                              ? FileImage(_image!)
+                              : const AssetImage('assets/user.png')
+                                  as ImageProvider,
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    TextFormField(
-                      controller: name,
-                      decoration: InputDecoration(
-                          labelText: "Name",
-                          labelStyle: TextStyle(
-                            color: Colors.black,
+                        if (_image == null)
+                          const Icon(
+                            Icons.camera_alt,
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            size: 30,
                           ),
-                          border: OutlineInputBorder()),
+                      ],
                     ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      controller: address,
-                      minLines: 4,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        labelText: "Address",
-                        labelStyle: TextStyle(
-                          color: Colors.black,
-                        ),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      controller: contact,
-                      decoration: InputDecoration(
-                          labelText: "Contact",
-                          labelStyle: TextStyle(
-                            color: Colors.black,
-                          ),
-                          border: OutlineInputBorder()),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      controller: email,
-                      decoration: InputDecoration(
-                          labelText: "Email",
-                          labelStyle: TextStyle(
-                            color: Colors.black,
-                          ),
-                          border: OutlineInputBorder()),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color.fromARGB(255, 7, 1, 1),
-                          width: 1.0,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 10.0),
-                            child: Text(
-                              "Gender:",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.black),
-                            ),
-                          ),
-                          Radio(
-                            value: "Male",
-                            groupValue: selectedGender,
-                            onChanged: (e) {
-                              setState(() {
-                                selectedGender = e!;
-                              });
-                            },
-                          ),
-                          Text(
-                            "Male",
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          Radio(
-                            value: "Female",
-                            groupValue: selectedGender,
-                            onChanged: (e) {
-                              setState(() {
-                                selectedGender = e!;
-                              });
-                            },
-                          ),
-                          Text(
-                            "Female",
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          Radio(
-                            value: "Others",
-                            groupValue: selectedGender,
-                            onChanged: (e) {
-                              setState(() {
-                                selectedGender = e!;
-                              });
-                            },
-                          ),
-                          Text("Others", style: TextStyle(color: Colors.black)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      controller: dob,
-                      readOnly:
-                          true, // Make the field read-only to prevent manual input
-                      decoration: InputDecoration(
-                        labelText: "Date of Birth",
-                        labelStyle: TextStyle(
-                          color: Colors
-                              .black, // Change the color to your desired value
-                        ),
-                        hintText: ("Select Date of Birth"),
-                        hintStyle: TextStyle(color: Colors.black),
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      onTap: () async {
-                        DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(), // Set the initial date
-                          firstDate: DateTime(1900), // Earliest date selectable
-                          lastDate: DateTime.now(), // Latest date selectable
-                        );
-
-                        if (pickedDate != null) {
-                          setState(() {
-                            // Format the date as desired, e.g., YYYY-MM-DD
-                            dob.text =
-                                "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
-                          });
-                        }
-                      },
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      controller: password,
-                      decoration: InputDecoration(
-                          labelText: "Password",
-                          labelStyle: TextStyle(
-                            color: Colors.black,
-                          ),
-                          border: OutlineInputBorder()),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'District',
-                        labelStyle: TextStyle(
-                          color: Colors.black,
-                        ),
-                        border: OutlineInputBorder(),
-                      ),
-                      value: selectedDistrict,
-                      hint: Text("Select a District"),
-                      onChanged: (newvalue) {
-                        setState(() {
-                          selectedDistrict = newvalue;
-
-                          fetchplace(newvalue!);
-                        });
-                      },
-                      items: Districtlist.map((district) {
-                        return DropdownMenuItem<String>(
-                          value: district['id'].toString(),
-                          child: Text(district['district_name']),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: 'Place',
-                        labelStyle: TextStyle(
-                          color: Colors.black,
-                        ),
-                        border: OutlineInputBorder(),
-                      ),
-                      value: selectedPlace,
-                      hint: Text("Select a Place"),
-                      onChanged: (newvalue) {
-                        setState(() {
-                          selectedPlace = newvalue;
-                        });
-                      },
-                      items: Placelist.map((place) {
-                        // print("Place:$place['id'].toString()");
-                        return DropdownMenuItem<String>(
-                          value: place['id'].toString(),
-                          child: Text(place['place_name']),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(
-                      height: 15,
-                    ),
-                    SizedBox(height: 15),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(200, 40),
-                        backgroundColor: Colors.black,
-                      ),
-                      onPressed: () {
-                        _reg();
-                      },
-                      child: Text(
-                        "Sign Up",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                SizedBox(height: 10),
+                TextFormField(
+                  controller: name,
+                  decoration: InputDecoration(
+                    labelText: "Name",
+                    prefixIcon: Icon(Icons.person, color: Colors.deepOrange),
+                    labelStyle: TextStyle(color: Colors.black),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.deepOrange),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 30),
+                TextFormField(
+                  controller: address,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.home, color: Colors.deepOrange),
+                    labelText: "Address",
+                    labelStyle: TextStyle(color: Colors.black),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.deepOrange),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 30),
+                TextFormField(
+                  controller: contact,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.phone, color: Colors.deepOrange),
+                    labelText: "Contact",
+                    labelStyle: TextStyle(color: Colors.black),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.deepOrange),
+                    ),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                SizedBox(height: 30),
+                TextFormField(
+                  controller: email,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.email, color: Colors.deepOrange),
+                    labelText: "Email",
+                    labelStyle: TextStyle(color: Colors.black),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.deepOrange),
+                    ),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                SizedBox(height: 30),
+                TextFormField(
+                  controller: password,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.lock, color: Colors.deepOrange),
+                    labelText: "Password",
+                    labelStyle: TextStyle(color: Colors.black),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.deepOrange),
+                    ),
+                  ),
+                  obscureText: true,
+                ),
+                SizedBox(height: 40),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: const Size(200, 40),
+                    backgroundColor: Colors.black,
+                  ),
+                  onPressed: _reg,
+                  child: Text(
+                    "Sign Up",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
