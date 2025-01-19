@@ -4,21 +4,8 @@ import 'package:pet_care_companion/activity.dart';
 import 'package:pet_care_companion/allpet.dart';
 import 'package:pet_care_companion/food.dart';
 import 'package:pet_care_companion/hospital.dart';
+import 'package:pet_care_companion/main.dart';
 import 'package:pet_care_companion/traning.dart';
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
-    );
-  }
-}
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -26,6 +13,33 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String name = "Loading..";
+  @override
+  void initState() {
+    super.initState();
+    fetchprofile();
+  }
+
+  Future<void> fetchprofile() async {
+    try {
+      final userid = supabase.auth.currentUser?.id;
+
+      if (userid != null) {
+        final response = await supabase
+            .from('Guest_tbl_userreg')
+            .select("user_name")
+            .eq('user_id', userid)
+            .single();
+        setState(() {
+          name = response['user_name'];
+          print(name);
+        });
+      }
+    } catch (e) {
+      print('Error fetching Profile Details: $e');
+    }
+  }
+
   int _selectedIndex = 0;
 
   // List of pages for navigation
@@ -83,11 +97,12 @@ class HomePage extends StatelessWidget {
           children: [
             // Welcome Section
             Text(
-              "Welcome, name,",
+              "Welcome, !",
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
+            SizedBox(height: 5),
             Text("What are you looking for?", style: TextStyle(fontSize: 18)),
-            SizedBox(height: 30),
+            SizedBox(height: 40),
             // Service Grid
             GridView.count(
               crossAxisCount: 2,
@@ -141,7 +156,7 @@ class HomePage extends StatelessWidget {
             SizedBox(height: 30),
             // Upcoming Vaccine Section
             Text(
-              "Upcoming Vaccine",
+              "Reminders",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),

@@ -10,15 +10,16 @@ class petphoto extends StatefulWidget {
 }
 
 class _petphotoState extends State<petphoto> {
-  final TextEditingController _titleController = TextEditingController();
-  final List<File> _photos = [];
+  final TextEditingController _title = TextEditingController();
+
+  File? _photos;
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _photos.add(File(pickedFile.path));
+        _photos = File(pickedFile.path);
       });
     }
   }
@@ -46,7 +47,7 @@ class _petphotoState extends State<petphoto> {
           children: [
             // Title Input
             TextFormField(
-              controller: _titleController,
+              controller: _title,
               decoration: InputDecoration(
                 labelText: "Title",
                 labelStyle: TextStyle(color: Colors.deepOrange.shade900),

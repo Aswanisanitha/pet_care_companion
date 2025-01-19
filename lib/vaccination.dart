@@ -1,42 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/main.dart';
 
-class vaccine extends StatefulWidget {
-  const vaccine({super.key});
+class Vaccine extends StatefulWidget {
+  final String petid;
+
+  const Vaccine({super.key, required this.petid});
 
   @override
-  State<vaccine> createState() => _vaccineState();
+  State<Vaccine> createState() => _VaccineState();
 }
 
-class _vaccineState extends State<vaccine> {
-  final _vaccineNameFocus = FocusNode();
-  final _vaccineDetailsFocus = FocusNode();
-  final _vaccinatedDateFocus = FocusNode();
-  final _nextVaccineDateFocus = FocusNode();
-
-  // Example list for vaccine history
-  final List<Map<String, String>> vaccineHistory = [
-    {
-      "name": "Rabies",
-      "details": "Protects against rabies virus",
-      "date": "01-01-2024",
-      "nextDate": "01-01-2025"
-    },
-    {
-      "name": "Parvo",
-      "details": "Prevents canine parvovirus",
-      "date": "15-02-2024",
-      "nextDate": "15-02-2025"
-    },
-  ];
-
+class _VaccineState extends State<Vaccine> {
+  // Controllers for text fields
+  final TextEditingController _vaccineName = TextEditingController();
+  final TextEditingController _vaccineDetails = TextEditingController();
+  final TextEditingController _vaccinatedDate = TextEditingController();
+  final TextEditingController _nextVaccineDate = TextEditingController();
+  List<Map<String, dynamic>> vaccineHistory = [];
   int? _selectedCardIndex;
+
+  Future<void> _addvaccine() async {
+    try {
+      final userid = supabase.auth.currentUser!.id;
+
+      await supabase.from('User_tbl_vaccinedetails').insert({
+        'pet_id_id': widget.petid,
+        'vaccine_name': _vaccineName.text,
+        'vaccine_details': _vaccineDetails.text,
+        'vaccine_date': _vaccinatedDate.text,
+        'vaccine_fordate': _nextVaccineDate.text,
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Successfully Added ")),
+      );
+    } catch (e) {
+      print(' Vaccine not added: $e');
+    }
+  }
+
+  Future<void> fetchvaccine() async {
+    try {
+      final response = await supabase.from('User_tbl_vaccinedetails').select();
+      setState(() {
+        vaccineHistory = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error fetching vaccine: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchvaccine();
+  }
 
   @override
   void dispose() {
-    _vaccineNameFocus.dispose();
-    _vaccineDetailsFocus.dispose();
-    _vaccinatedDateFocus.dispose();
-    _nextVaccineDateFocus.dispose();
+    // Dispose controllers
+    _vaccineName.dispose();
+    _vaccineDetails.dispose();
+    _vaccinatedDate.dispose();
+    _nextVaccineDate.dispose();
     super.dispose();
   }
 
@@ -63,23 +88,23 @@ class _vaccineState extends State<vaccine> {
             children: [
               _buildTextField(
                 label: "Vaccine Name",
-                focusNode: _vaccineNameFocus,
+                controller: _vaccineName,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 label: "Vaccine Details",
-                focusNode: _vaccineDetailsFocus,
+                controller: _vaccineDetails,
                 maxLines: 5,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 label: "Vaccinated Date",
-                focusNode: _vaccinatedDateFocus,
+                controller: _vaccinatedDate,
               ),
               const SizedBox(height: 16),
               _buildTextField(
                 label: "Next Vaccine Date",
-                focusNode: _nextVaccineDateFocus,
+                controller: _nextVaccineDate,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -129,15 +154,17 @@ class _vaccineState extends State<vaccine> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                vaccine["name"] ?? "",
+                                vaccine["vaccine_name"] ?? "",
                                 style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 5),
-                              Text("Details: ${vaccine["details"] ?? ""}"),
-                              Text("Vaccinated Date: ${vaccine["date"] ?? ""}"),
                               Text(
-                                  "Next Vaccine Date: ${vaccine["nextDate"] ?? ""}"),
+                                  "Details: ${vaccine["vaccine_details"] ?? ""}"),
+                              Text(
+                                  "Vaccinated Date: ${vaccine["vaccine_date"] ?? ""}"),
+                              Text(
+                                  "Next Vaccine Date: ${vaccine["vaccine_fordate"] ?? ""}"),
                             ],
                           ),
                         ),
@@ -155,11 +182,11 @@ class _vaccineState extends State<vaccine> {
 
   Widget _buildTextField({
     required String label,
-    required FocusNode focusNode,
+    required TextEditingController controller,
     int maxLines = 1,
   }) {
     return TextFormField(
-      focusNode: focusNode,
+      controller: controller,
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,

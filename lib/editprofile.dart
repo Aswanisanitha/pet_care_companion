@@ -1,6 +1,107 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart'; // Add this for image selection
+import 'dart:io';
 
-class EditProfile extends StatelessWidget {
+import 'package:pet_care_companion/main.dart'; // For file handling
+
+class EditProfile extends StatefulWidget {
+  @override
+  State<EditProfile> createState() => _EditProfileState();
+}
+
+class _EditProfileState extends State<EditProfile> {
+  final TextEditingController name = TextEditingController();
+  final TextEditingController address = TextEditingController();
+  final TextEditingController contact = TextEditingController();
+
+  Map<String, dynamic>? profile;
+  File? _image;
+  final ImagePicker _picker = ImagePicker(); // To store the selected image
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProfile();
+  }
+
+  Future<void> fetchProfile() async {
+    try {
+      final userid = supabase.auth.currentUser?.id;
+
+      if (userid != null) {
+        final response = await supabase
+            .from('Guest_tbl_userreg')
+            .select()
+            .eq('user_id', userid)
+            .single();
+
+        setState(() {
+          profile = response;
+          name.text = profile?['user_name'] ?? '';
+          address.text = profile?['user_address'] ?? '';
+          contact.text = profile?['user_contact'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error fetching Profile Details: $e');
+    }
+  }
+
+  Future<void> _edit() async {
+    try {
+      final userid = supabase.auth.currentUser?.id;
+
+      if (userid != null) {
+        String? photoUrl;
+        if (_image != null) {
+          photoUrl = await _uploadImage(_image!, userid);
+          print("Selected Photo: $photoUrl");
+        }
+        final updates = {
+          'user_name': name.text,
+          'user_address': address.text,
+          'user_contact': contact.text,
+          'user_photo': photoUrl
+        };
+
+        await supabase
+            .from('Guest_tbl_userreg')
+            .update(updates)
+            .eq('user_id', userid);
+        fetchProfile();
+      }
+    } catch (e) {
+      print('Error updating Profile Details: $e');
+    }
+  }
+
+  Future<String?> _uploadImage(File image, String userid) async {
+    try {
+      final Foldername = "UserDocs";
+      final fileName = '$Foldername/';
+
+      await supabase.storage.from('petcare').upload(fileName, image);
+
+      final imageUrl = supabase.storage.from('petcare').getPublicUrl(fileName);
+      print("Responsed Image :$imageUrl");
+      return imageUrl;
+    } catch (e) {
+      print('Image upload failed: $e');
+      return null;
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      setState(() {
+        _image = File(pickedImage.path);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -10,9 +111,7 @@ class EditProfile extends StatelessWidget {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           TextButton(
-            onPressed: () {
-              // Save action
-            },
+            onPressed: _edit, // Save action
             child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -29,17 +128,21 @@ class EditProfile extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: AssetImage(
-                          'assets/profile_picture.jpg'), // Replace with your image asset
+                      backgroundImage: _image != null
+                          ? FileImage(_image!) as ImageProvider
+                          : NetworkImage(profile?['user_photo']),
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.camera_alt,
-                            size: 16, color: Colors.black),
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: Colors.white,
+                          child: Icon(Icons.camera_alt,
+                              size: 16, color: Colors.black),
+                        ),
                       ),
                     ),
                   ],
@@ -54,126 +157,51 @@ class EditProfile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Name', // Replace with your desired title
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey),
-                  ),
-                  SizedBox(height: 2),
-                  Container(
-                    width: double.infinity,
-                    height: 45,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    // child: Text(
-                    //   value,
-                    //   style: const TextStyle(fontSize: 16, color: Colors.black),
-                    // ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Address', // Replace with your desired title
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey),
-                      ),
-                      SizedBox(height: 2),
-                      Container(
-                        width: double.infinity,
-                        height: 45,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        // child: Text(
-                        //   value,
-                        //   style: const TextStyle(fontSize: 16, color: Colors.black),
-                        // ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Phone Number', // Replace with your desired title
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Container(
-                        width: double.infinity,
-                        height: 45,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        // child: Text(
-                        //   value,
-                        //   style: const TextStyle(fontSize: 16, color: Colors.black),
-                        // ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Email', // Replace with your desired title
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.grey),
-                      ),
-                      SizedBox(height: 2),
-                      Container(
-                        width: double.infinity,
-                        height: 45,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        // child: Text(
-                        //   value,
-                        //   style: const TextStyle(fontSize: 16, color: Colors.black),
-                        // ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
+                  _buildTextFormField('Name', name),
+                  const SizedBox(height: 20),
+                  _buildTextFormField('Address', address),
+                  const SizedBox(height: 20),
+                  _buildTextFormField('Phone Number', contact,
+                      keyboardType: TextInputType.phone),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTextFormField(String label, TextEditingController controller,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          width: double.infinity,
+          height: 45,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

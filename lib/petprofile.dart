@@ -1,7 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/main.dart';
 
-class PetProfile extends StatelessWidget {
+class PetProfile extends StatefulWidget {
   const PetProfile({super.key});
+
+  @override
+  State<PetProfile> createState() => _PetProfileState();
+}
+
+class _PetProfileState extends State<PetProfile> {
+  Map<String, dynamic>? petprofile;
+  @override
+  void initState() {
+    super.initState();
+    fetchpetprofile();
+  }
+
+  Future<void> fetchpetprofile() async {
+    try {
+      final userid = supabase.auth.currentUser?.id;
+
+      if (userid != null) {
+        final response = await supabase.from('User_tbl_pet').select();
+      }
+    } catch (e) {
+      print('Error fetching Profile Details: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,11 +131,9 @@ class PetProfile extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // Navigate to the gallery screen
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => const GalleryScreen()),
+                    MaterialPageRoute(builder: (context) => GalleryScreen()),
                   );
                 },
                 child: const Text(
@@ -150,15 +173,15 @@ class PetProfile extends StatelessWidget {
   String _getPetDetailValue(int index) {
     switch (index) {
       case 0:
-        return 'Fluffy'; // Example pet name
+        return 'Fluffy';
       case 1:
-        return 'Cat'; // Example species
+        return 'Cat';
       case 2:
-        return 'Persian'; // Example breed
+        return 'Persian';
       case 3:
-        return '4.5 kg'; // Example weight
+        return '4.5 kg';
       case 4:
-        return 'Female'; // Example sex
+        return 'Female';
       default:
         return '';
     }
@@ -189,11 +212,11 @@ class GalleryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gallery'),
+        title: Text('Gallery'),
         backgroundColor: Colors.deepOrange.shade900,
       ),
       body: Center(
-        child: const Text(
+        child: Text(
           'Gallery Screen',
           style: TextStyle(fontSize: 24),
         ),

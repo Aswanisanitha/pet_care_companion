@@ -10,6 +10,7 @@ class food extends StatefulWidget {
 
 class _foodState extends State<food> {
   List<Map<String, dynamic>> foodList = [];
+
   String? selectedType;
   String? selectedBreed;
 
@@ -184,8 +185,18 @@ class _foodState extends State<food> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                foodplan['description'] ?? 'No details',
-                                style: TextStyle(color: Colors.grey),
+                                foodplan['food_Quantity'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                foodplan['food_calories'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                foodplan['food_type'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),

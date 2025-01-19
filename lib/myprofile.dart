@@ -1,7 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/main.dart';
 
-class Myprofile extends StatelessWidget {
+class Myprofile extends StatefulWidget {
   const Myprofile({super.key});
+
+  @override
+  State<Myprofile> createState() => _MyprofileState();
+}
+
+class _MyprofileState extends State<Myprofile> {
+  Map<String, dynamic>? profile;
+  @override
+  void initState() {
+    super.initState();
+    fetchprofile();
+  }
+
+  Future<void> fetchprofile() async {
+    try {
+      final userid = supabase.auth.currentUser?.id;
+
+      if (userid != null) {
+        final response = await supabase
+            .from('Guest_tbl_userreg')
+            .select()
+            .eq('user_id', userid)
+            .single();
+
+        setState(() {});
+        profile = response;
+      }
+    } catch (e) {
+      print('Error fetching Profile Details: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9,7 +41,7 @@ class Myprofile extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'My Profile',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.deepOrange.shade900,
@@ -53,19 +85,7 @@ class Myprofile extends StatelessWidget {
                         ),
                         child: CircleAvatar(
                           radius: 60,
-                          backgroundImage:
-                              AssetImage('assets/profile_picture.jpg'),
-                        ),
-                      ),
-                      // Edit Icon
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.orange.shade700,
-                          child:
-                              Icon(Icons.edit, color: Colors.white, size: 18),
+                          backgroundImage: NetworkImage(profile?['user_photo']),
                         ),
                       ),
                     ],
@@ -73,13 +93,18 @@ class Myprofile extends StatelessWidget {
                 ),
                 SizedBox(height: 30),
                 // User Details Section
-                _buildInfoTile(Icons.person, 'John Doe'),
+                _buildInfoTile(
+                    Icons.person, profile?['user_name'] ?? 'Loading...'),
+
                 SizedBox(height: 20),
-                _buildInfoTile(Icons.email, 'john.doe@example.com'),
+                _buildInfoTile(
+                    Icons.email, profile?['user_email'] ?? 'Loading...'),
                 SizedBox(height: 20),
-                _buildInfoTile(Icons.phone, '+123 456 7890'),
+                _buildInfoTile(
+                    Icons.phone, profile?['user_contact'] ?? 'Loading...'),
                 SizedBox(height: 20),
-                _buildInfoTile(Icons.house, 'Address'),
+                _buildInfoTile(
+                    Icons.house, profile?['user_address'] ?? 'Loading...'),
               ],
             ),
           ),

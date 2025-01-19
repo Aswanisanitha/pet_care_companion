@@ -19,42 +19,9 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController contact = TextEditingController();
   final TextEditingController address = TextEditingController();
   final TextEditingController password = TextEditingController();
-  final TextEditingController dob = TextEditingController();
 
-  String selectedGender = '';
-  String? selectedDistrict;
-  String? selectedPlace;
   File? _image;
   final ImagePicker _picker = ImagePicker();
-  List<Map<String, dynamic>> Districtlist = [];
-
-  Future<void> fetchdistrict() async {
-    try {
-      final response = await supabase.from('Admin_tbl_district').select();
-
-      setState(() {
-        Districtlist = response;
-      });
-    } catch (e) {
-      print('Exception during fetch: $e');
-    }
-  }
-
-  List<Map<String, dynamic>> Placelist = [];
-  Future<void> fetchplace(String selectedDistrict) async {
-    try {
-      final response = await supabase
-          .from('Admin_tbl_place')
-          .select()
-          .eq('district_id', selectedDistrict);
-
-      setState(() {
-        Placelist = response;
-      });
-    } catch (e) {
-      print('Exception during fetch: $e');
-    }
-  }
 
   Future<void> _reg() async {
     try {
@@ -90,10 +57,7 @@ class _RegistrationState extends State<Registration> {
           'user_email': email.text,
           'user_password': password.text,
           'user_contact': contact.text,
-          'user_gender': selectedGender,
           'user_address': address.text,
-          'user_dob': dob.text,
-          'user_place_id': selectedPlace,
         });
         print('User created successfully');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -132,12 +96,6 @@ class _RegistrationState extends State<Registration> {
       print('Image upload failed: $e');
       return null;
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    fetchdistrict();
   }
 
   @override

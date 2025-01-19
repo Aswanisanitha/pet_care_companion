@@ -4,13 +4,45 @@ import 'package:pet_care_companion/changepswd.dart';
 import 'package:pet_care_companion/complaint.dart';
 import 'package:pet_care_companion/editprofile.dart';
 import 'package:pet_care_companion/feedback.dart';
+import 'package:pet_care_companion/main.dart';
 import 'package:pet_care_companion/myappointments.dart';
 import 'package:pet_care_companion/mycomplaints.dart';
 import 'package:pet_care_companion/myprofile.dart';
 import 'package:pet_care_companion/petprofile.dart';
 
-class account extends StatelessWidget {
+class account extends StatefulWidget {
   const account({super.key});
+
+  @override
+  State<account> createState() => _accountState();
+}
+
+class _accountState extends State<account> {
+  Map<String, dynamic>? profile;
+  @override
+  void initState() {
+    super.initState();
+    fetchprofile();
+  }
+
+  Future<void> fetchprofile() async {
+    try {
+      final userid = supabase.auth.currentUser?.id;
+
+      if (userid != null) {
+        final response = await supabase
+            .from('Guest_tbl_userreg')
+            .select()
+            .eq('user_id', userid)
+            .single();
+
+        setState(() {});
+        profile = response;
+      }
+    } catch (e) {
+      print('Error fetching Profile Details: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +69,15 @@ class account extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundImage: AssetImage(
-                      'assets/profile_picture.jpg'), // Replace with actual asset
+                  backgroundImage: NetworkImage(
+                      profile?['user_photo']), // Replace with actual asset
                 ),
                 const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'John Doe',
+                      profile?['user_name'],
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -53,7 +85,7 @@ class account extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'john.doe@example.com',
+                      profile?['user_email'],
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],

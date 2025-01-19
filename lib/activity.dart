@@ -186,8 +186,13 @@ class _ActivityState extends State<Activity> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                activity['description'] ?? 'No details',
-                                style: TextStyle(color: Colors.grey),
+                                activity['activity_time'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                activity['activity_details'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),

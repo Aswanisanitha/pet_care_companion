@@ -20,8 +20,8 @@ class _LoginState extends State<Login> {
       email: email.text,
       password: password.text,
     );
-    final Session? session = res.session;
     final User? user = res.user;
+    print(user);
     if (user?.id != "") {
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => HomeScreen()));
@@ -40,99 +40,101 @@ class _LoginState extends State<Login> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: Form(
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/login1.png",
-              ),
-              // Email TextField with Icon and Focused Border
-              TextFormField(
-                controller: email,
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.email, color: Colors.deepOrange),
-                  labelStyle: TextStyle(color: Colors.black),
-                  labelText: "Email",
-                  border: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.deepOrange, width: 2.0),
-                  ),
+        child: SingleChildScrollView(
+          child: Form(
+            child: Column(
+              children: [
+                Image.asset(
+                  "assets/login1.png",
                 ),
-              ),
-              const SizedBox(height: 10),
-              // Password TextField with Icon and Focused Border
-              TextFormField(
-                controller: password,
-                obscureText: true,
-                decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.lock, color: Colors.deepOrange),
-                  labelText: "Password",
-                  labelStyle: TextStyle(color: Colors.black),
-                  border: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.deepOrange, width: 2.0),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    "Forgot Password?",
-                    style: TextStyle(
-                      color: Colors.deepOrange.shade900,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                // Email TextField with Icon and Focused Border
+                TextFormField(
+                  controller: email,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.email, color: Colors.deepOrange),
+                    labelStyle: TextStyle(color: Colors.black),
+                    labelText: "Email",
+                    border: OutlineInputBorder(),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Colors.deepOrange, width: 2.0),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 5),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  fixedSize: const Size(200, 40),
-                  backgroundColor: Colors.black,
-                ),
-                onPressed: () {
-                  signIn();
-                },
-                child: const Text(
-                  "Sign In",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Don't have an account?",
-                    style: TextStyle(color: Colors.black),
+                const SizedBox(height: 10),
+                // Password TextField with Icon and Focused Border
+                TextFormField(
+                  controller: password,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(Icons.lock, color: Colors.deepOrange),
+                    labelText: "Password",
+                    labelStyle: TextStyle(color: Colors.black),
+                    border: OutlineInputBorder(),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Colors.deepOrange, width: 2.0),
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Registration(),
-                        ),
-                      );
-                    },
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {},
                     child: Text(
-                      " Sign Up",
+                      "Forgot Password?",
                       style: TextStyle(
-                        color: Colors.deepOrange,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
+                        color: Colors.deepOrange.shade900,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 5),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: const Size(200, 40),
+                    backgroundColor: Colors.black,
+                  ),
+                  onPressed: () {
+                    signIn();
+                  },
+                  child: const Text(
+                    "Sign In",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Don't have an account?",
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Registration(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        " Sign Up",
+                        style: TextStyle(
+                          color: Colors.deepOrange,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

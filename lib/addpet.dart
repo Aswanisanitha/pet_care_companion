@@ -23,7 +23,7 @@ class _addpetState extends State<addpet> {
 
   List<Map<String, dynamic>> typeList = [];
   List<Map<String, dynamic>> breedList = [];
-  List<Map<String, dynamic>> pets = [];
+  List<Map<String, dynamic>> pets = []; //view pets
 
   File? _image;
   final ImagePicker _picker = ImagePicker();
@@ -55,6 +55,7 @@ class _addpetState extends State<addpet> {
           .from('Admin_tbl_breed')
           .select()
           .eq('pettype_id', typeId);
+      print(response);
       setState(() {
         breedList = List<Map<String, dynamic>>.from(response);
       });
@@ -63,46 +64,72 @@ class _addpetState extends State<addpet> {
     }
   }
 
-  void _addPet() {
-    if (name.text.isEmpty ||
-        age.text.isEmpty ||
-        weight.text.isEmpty ||
-        selectedGender.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all the required fields")),
-      );
-      return;
-    }
-
-    setState(() {
-      pets.add({
-        'name': name.text,
-        'age': age.text,
-        'weight': weight.text,
-        'gender': selectedGender,
-        'type': selectedType,
-        'breed': selectedBreed,
-        'image': _image,
+  Future<void> _addpet() async {
+    try {
+      final userid = supabase.auth.currentUser!.id;
+      String? photoUrl;
+      if (_image != null) {
+        photoUrl = await _uploadImage(_image!);
+      }
+      await supabase.from('User_tbl_pet').insert({
+        'user_id_id': userid,
+        'pet_name': name.text,
+        'pet_age': age.text,
+        'pet_weight': weight.text,
+        'pet_gender': selectedGender,
+        'breed_id': selectedBreed,
+        'pet_photo': photoUrl,
       });
-
-      _resetForm();
-    });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Successfully Added ")),
+      );
+    } catch (e) {
+      print(' Adding pet failed: $e');
+    }
   }
 
-  void _resetForm() {
-    name.clear();
-    age.clear();
-    weight.clear();
-    selectedGender = '';
-    selectedType = null;
-    selectedBreed = null;
-    _image = null;
+  Future<String?> _uploadImage(File _image) async {
+    try {
+      final folderName = "PetDocs"; // Folder name
+      final fileName = "$folderName/${_image.path.split('/').last}";
+      // Adding a unique filename by combining timestamp and original file name
+
+      await supabase.storage.from('petcare').upload(fileName, _image);
+
+      final imageUrl = supabase.storage.from('petcare').getPublicUrl(fileName);
+      return imageUrl;
+    } catch (e) {
+      print('Image upload failed: $e');
+      return null;
+    }
+  }
+
+  Future<void> fetchpets() async {
+    try {
+      final userid = supabase.auth.currentUser!.id;
+      if (userid != null) {
+        final response = await supabase
+            .from('User_tbl_pet')
+            .select(
+                '*, Admin_tbl_breed(breed_name, Admin_tbl_pettype(type_name))')
+            .eq('user_id_id', userid);
+
+        print(response);
+
+        setState(() {
+          pets = List<Map<String, dynamic>>.from(response);
+        });
+      }
+    } catch (e) {
+      print('Error fetching pets: $e');
+    }
   }
 
   @override
   void initState() {
     super.initState();
     fetchPetTypes();
+    fetchpets();
   }
 
   @override
@@ -143,7 +170,7 @@ class _addpetState extends State<addpet> {
                         backgroundColor: Colors.grey.shade300,
                         backgroundImage: _image != null
                             ? FileImage(_image!)
-                            : const AssetImage('assets/petmain1.png')
+                            : AssetImage('assets/petmain1.png')
                                 as ImageProvider,
                       ),
                       if (_image == null)
@@ -181,6 +208,7 @@ class _addpetState extends State<addpet> {
                         onChanged: (value) {
                           setState(() {
                             selectedType = value;
+                            fetchBreeds(value!);
                           });
                         },
                       ),
@@ -204,7 +232,7 @@ class _addpetState extends State<addpet> {
                       const SizedBox(height: 15),
                       _buildTextField(age, "Age", Icons.cake),
                       const SizedBox(height: 15),
-                      const Text("Gender:", style: TextStyle(fontSize: 16)),
+                      Text("Gender:", style: TextStyle(fontSize: 16)),
                       Row(
                         children: [
                           _buildRadioButton("Male"),
@@ -227,7 +255,7 @@ class _addpetState extends State<addpet> {
                     ),
                     fixedSize: const Size(200, 40),
                   ),
-                  onPressed: _addPet,
+                  onPressed: _addpet,
                   child: const Text(
                     "Add",
                     style: TextStyle(color: Colors.white, fontSize: 16),
@@ -235,9 +263,9 @@ class _addpetState extends State<addpet> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 "Pets:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               ListView.builder(
@@ -255,14 +283,14 @@ class _addpetState extends State<addpet> {
                       children: [
                         ListTile(
                           leading: CircleAvatar(
-                            backgroundImage: pet['image'] != null
-                                ? FileImage(pet['image'])
-                                : const AssetImage('assets/petmain1.png')
+                            backgroundImage: pet['pet_photo'] != null
+                                ? NetworkImage(pet['pet_photo'])
+                                : AssetImage('assets/petmain1.png')
                                     as ImageProvider,
                           ),
-                          title: Text(pet['name']),
+                          title: Text(pet['pet_name']),
                           subtitle: Text(
-                              "Age: ${pet['age']}, Weight: ${pet['weight']}kg, Gender: ${pet['gender']}"),
+                              "Age: ${pet['pet_age']}, Weight: ${pet['pet_weight']}kg, Gender: ${pet['pet_gender']},Breed:${pet['Admin_tbl_breed']['breed_name']},PetType:${pet['Admin_tbl_breed']['Admin_tbl_pettype']['type_name']}"),
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -282,7 +310,8 @@ class _addpetState extends State<addpet> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => vaccine()),
+                                      builder: (context) =>
+                                          Vaccine(petid: pet['id'].toString())),
                                 );
                               },
                               child: const Text("Add Vaccine Details "),

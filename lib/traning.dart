@@ -186,9 +186,10 @@ class _traningState extends State<traning> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                traningplan['description'] ?? 'No details',
-                                style: TextStyle(color: Colors.grey),
+                                traningplan['traning_file'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
+                              SizedBox(height: 4),
                             ],
                           ),
                         ),
