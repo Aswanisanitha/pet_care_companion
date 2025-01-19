@@ -11,15 +11,14 @@ class petphoto extends StatefulWidget {
 
 class _petphotoState extends State<petphoto> {
   final TextEditingController _title = TextEditingController();
-
-  File? _photos;
+  final List<File> _photos = [];
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _photos = File(pickedFile.path);
+        _photos.add(File(pickedFile.path));
       });
     }
   }

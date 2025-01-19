@@ -8,7 +8,6 @@ import 'package:pet_care_companion/main.dart';
 import 'package:pet_care_companion/myappointments.dart';
 import 'package:pet_care_companion/mycomplaints.dart';
 import 'package:pet_care_companion/myprofile.dart';
-import 'package:pet_care_companion/petprofile.dart';
 
 class account extends StatefulWidget {
   const account({super.key});
@@ -77,7 +76,7 @@ class _accountState extends State<account> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      profile?['user_name'],
+                      profile?['user_name'] ?? "Loading..",
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 20,
@@ -85,7 +84,7 @@ class _accountState extends State<account> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      profile?['user_email'],
+                      profile?['user_email'] ?? "Loading..",
                       style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                   ],

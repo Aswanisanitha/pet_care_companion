@@ -1,178 +1,175 @@
 import 'package:flutter/material.dart';
 import 'package:pet_care_companion/main.dart';
 
-class Hospital extends StatefulWidget {
-  const Hospital({super.key});
+class hospital extends StatefulWidget {
+  const hospital({super.key});
 
   @override
-  State<Hospital> createState() => _HospitalState();
+  State<hospital> createState() => _hospitalState();
 }
 
-class _HospitalState extends State<Hospital> {
+class _hospitalState extends State<hospital> {
   List<Map<String, dynamic>> _hospitalList = [];
-  List<Map<String, dynamic>> districtList = [];
-  List<Map<String, dynamic>> placeList = [];
 
-  String? selectedDistrict;
-  String? selectedPlace;
-
-  Future<void> fetchHospitals(String selectedPlace) async {
+  Future<void> fetchHospital(String selectedPlace) async {
     try {
       final response = await supabase
           .from('Guest_tbl_vetinaryhospital')
           .select()
           .eq('place_id_id', selectedPlace);
+      print(response);
       setState(() {
-        _hospitalList = List<Map<String, dynamic>>.from(response);
+        _hospitalList = response;
       });
     } catch (e) {
-      print('Error fetching hospitals: $e');
+      print('Exception during fetch: $e');
     }
   }
 
-  Future<void> fetchDistricts() async {
+  Future<void> fetchHospitals() async {
+    try {
+      final response =
+          await supabase.from('Guest_tbl_vetinaryhospital').select();
+      print(response);
+      setState(() {
+        _hospitalList = response;
+      });
+    } catch (e) {
+      print('Exception during fetch: $e');
+    }
+  }
+
+  String? selectedDistrict;
+  String? selectedPlace;
+
+  List<Map<String, dynamic>> districtList = [];
+  Future<void> fetchDistrict() async {
     try {
       final response = await supabase.from('Admin_tbl_district').select();
+
       setState(() {
-        districtList = List<Map<String, dynamic>>.from(response);
+        districtList = response;
       });
     } catch (e) {
-      print('Error fetching districts: $e');
+      print('Exception during fetch: $e');
     }
   }
 
-  Future<void> fetchPlaces(String districtId) async {
+  List<Map<String, dynamic>> placeList = [];
+  Future<void> fetchPlace(String selectedDistrict) async {
     try {
       final response = await supabase
           .from('Admin_tbl_place')
           .select()
-          .eq('district_id', districtId);
+          .eq('district_id', selectedDistrict);
+
       setState(() {
-        placeList = List<Map<String, dynamic>>.from(response);
+        placeList = response;
       });
     } catch (e) {
-      print('Error fetching places: $e');
+      print('Exception during fetch: $e');
     }
   }
 
   @override
   void initState() {
     super.initState();
-    fetchDistricts();
+    fetchDistrict();
+    fetchHospitals();
   }
 
   void showSlotBookingModal(
       BuildContext context, Map<String, dynamic> hospital) {
-    String? selectedDate;
-    String? selectedSlot;
-    List<Map<String, dynamic>> slotList = [];
-
-    Future<void> fetchSlots(String hospitalId) async {
-      try {
-        final response = await supabase
-            .from('Vetinaryhospital_tbl_slot')
-            .select()
-            .eq('vetinaryhospital_id_id', hospitalId);
-        print(response);
-        setState(() {
-          slotList = List<Map<String, dynamic>>.from(response);
-        });
-      } catch (e) {
-        print('Error fetching slots: $e');
-      }
-    }
-
-    fetchSlots(hospital['id'].toString()); // Fetch slots for the hospital
-    print(hospital);
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, modalSetState) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Book Slot for ${hospital['vetinaryhospital_name']}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.deepOrange,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: "Date",
-                      hintText: "Select a date",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      suffixIcon: Icon(Icons.calendar_today),
-                    ),
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2100),
-                      );
-                      if (pickedDate != null) {
-                        modalSetState(() {
-                          selectedDate = pickedDate.toString().split(' ')[0];
-                        });
-                      }
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: "Slot Time",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    value: selectedSlot,
-                    items: slotList.map((slot) {
-                      return DropdownMenuItem(
-                        value: slot['id'].toString(),
-                        child: Text(slot['slot_fromtime']),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      modalSetState(() {
-                        selectedSlot = value;
-                      });
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close the modal
-                      print(
-                          "Booked ${hospital['vetinaryhospital_name']} for $selectedDate at $selectedSlot");
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrange,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      "Submit",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
+        String? selectedDate;
+        String? selectedSlot;
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Book Slot for ${hospital['vetinaryhospital_name']}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.deepOrange,
+                ),
               ),
-            );
-          },
+              SizedBox(height: 16),
+              TextField(
+                decoration: InputDecoration(
+                  labelText: "Date",
+                  hintText: "Select a date",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                onTap: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      selectedDate = pickedDate.toString().split(' ')[0];
+                    });
+                  }
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: "Slot Time",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                value: selectedSlot,
+                items: [
+                  "9:00 AM - 10:00 AM",
+                  "10:00 AM - 11:00 AM",
+                  "11:00 AM - 12:00 PM",
+                  "2:00 PM - 3:00 PM",
+                ].map((slot) {
+                  return DropdownMenuItem(
+                    value: slot,
+                    child: Text(slot),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedSlot = value;
+                  });
+                },
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close the modal
+                  // Submit booking logic here
+                  print(
+                      "Booked ${hospital['vetinaryhospital_name']} for $selectedDate at $selectedSlot");
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepOrange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text("Submit", style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -182,10 +179,8 @@ class _HospitalState extends State<Hospital> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Hospital List',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: Text('Hospital List',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.deepOrange.shade900,
       ),
       body: Column(
@@ -193,46 +188,62 @@ class _HospitalState extends State<Hospital> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      hint: Text('Select District'),
-                      value: selectedDistrict,
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedDistrict = newValue;
-                          fetchPlaces(newValue!);
-                          selectedPlace = null;
-                        });
-                      },
-                      items: districtList.map((district) {
-                        return DropdownMenuItem<String>(
-                          value: district['id'].toString(),
-                          child: Text(district['district_name']),
-                        );
-                      }).toList(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.deepOrange, width: 1),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        hint: Text('Select District'),
+                        value: selectedDistrict,
+                        onChanged: (newValue) {
+                          setState(() {
+                            selectedDistrict = newValue;
+                            fetchPlace(newValue!);
+                            selectedPlace = null;
+                          });
+                        },
+                        items: districtList.map((district) {
+                          return DropdownMenuItem<String>(
+                            value: district['id'].toString(),
+                            child: Text(district['district_name']),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
                 SizedBox(width: 8),
                 Expanded(
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      hint: Text('Select Place'),
-                      value: selectedPlace,
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedPlace = newValue;
-                          fetchHospitals(selectedPlace!);
-                        });
-                      },
-                      items: placeList.map((place) {
-                        return DropdownMenuItem<String>(
-                          value: place['id'].toString(),
-                          child: Text(place['place_name']),
-                        );
-                      }).toList(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.deepOrange, width: 1),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        hint: Text('Select Place'),
+                        value: selectedPlace,
+                        onChanged: (newValue) {
+                          setState(() {
+                            selectedPlace = newValue;
+                            fetchHospital(selectedPlace!);
+                          });
+                        },
+                        items: placeList.map((place) {
+                          return DropdownMenuItem<String>(
+                            value: place['id'].toString(),
+                            child: Text(place['place_name']),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
                 ),
@@ -244,37 +255,41 @@ class _HospitalState extends State<Hospital> {
               itemCount: _hospitalList.length,
               itemBuilder: (context, index) {
                 final hospital = _hospitalList[index];
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      hospital['vetinaryhospital_name']!,
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 4.0),
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(hospital['vetinaryhospital_contact']),
-                        Text(hospital['vetinaryhospital_email']),
-                        Text(hospital['vetinaryhospital_address']),
-                      ],
-                    ),
-                    leading: Icon(
-                      Icons.local_hospital,
-                      color: Colors.deepOrange,
-                    ),
-                    trailing: ElevatedButton(
-                      onPressed: () => showSlotBookingModal(context, hospital),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepOrange,
+                    child: ListTile(
+                      title: Text(
+                        hospital['vetinaryhospital_name']!,
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      child: Text(
-                        "Book Slot",
-                        style: TextStyle(color: Colors.white),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(hospital['vetinaryhospital_contact']),
+                          Text(hospital['vetinaryhospital_email']),
+                          Text(hospital['vetinaryhospital_address']),
+                        ],
+                      ),
+                      leading: Icon(
+                        Icons.local_hospital,
+                        color: Colors.deepOrange,
+                      ),
+                      trailing: ElevatedButton(
+                        onPressed: () =>
+                            showSlotBookingModal(context, hospital),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepOrange,
+                        ),
+                        child: Text(
+                          "Book Slot",
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ),
