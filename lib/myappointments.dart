@@ -1,30 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/main.dart';
 
-class appointment extends StatelessWidget {
+class appointment extends StatefulWidget {
   const appointment({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Sample appointment data
-    final appointments = [
-      {
-        'hospitalName': 'City Hospital',
-        'contact': '+1 123 456 7890',
-        'address': '123 Main Street, NY',
-        'date': '2024-12-31',
-        'time': '10:00 AM',
-        'status': 'Confirmed'
-      },
-      {
-        'hospitalName': 'Metro Care',
-        'contact': '+1 987 654 3210',
-        'address': '456 Elm Street, LA',
-        'date': '2024-12-30',
-        'time': '2:00 PM',
-        'status': 'Pending'
-      },
-    ];
+  State<appointment> createState() => _appointmentState();
+}
 
+class _appointmentState extends State<appointment> {
+  List<Map<String, dynamic>> appointments = [];
+  Future<void> fetchappointments() async {
+    try {
+      final response = await supabase.from('User_tbl_appointment').select();
+      setState(() {
+        appointments = List<Map<String, dynamic>>.from(response);
+      });
+    } catch (e) {
+      print('Error fetching appointment: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchappointments();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.deepOrange.shade900,
@@ -58,7 +62,7 @@ class appointment extends StatelessWidget {
                     SizedBox(height: 8),
                     Text("Contact: ${appointment['contact']}"),
                     Text("Address: ${appointment['address']}"),
-                    Text("Date: ${appointment['date']}"),
+                    Text("Date: ${appointment['appointment_Fordate']}"),
                     Text("Time: ${appointment['time']}"),
                     SizedBox(height: 8),
                     Text(

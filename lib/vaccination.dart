@@ -40,7 +40,10 @@ class _VaccineState extends State<Vaccine> {
 
   Future<void> fetchvaccine() async {
     try {
-      final response = await supabase.from('User_tbl_vaccinedetails').select();
+      final response = await supabase
+          .from('User_tbl_vaccinedetails')
+          .select()
+          .eq('pet_id_id', widget.petid);
       setState(() {
         vaccineHistory = List<Map<String, dynamic>>.from(response);
       });
@@ -109,7 +112,8 @@ class _VaccineState extends State<Vaccine> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  // Submit action
+                  print("Submit button clicked"); // Debugging
+                  _addvaccine();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepOrange.shade900,

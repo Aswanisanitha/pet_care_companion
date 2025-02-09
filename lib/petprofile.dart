@@ -21,7 +21,8 @@ class _PetProfileState extends State<PetProfile> {
       final userid = supabase.auth.currentUser?.id;
 
       if (userid != null) {
-        final response = await supabase.from('User_tbl_pet').select();
+        final response =
+            await supabase.from('User_tbl_pet').select().eq('user_id', userid);
       }
     } catch (e) {
       print('Error fetching Profile Details: $e');

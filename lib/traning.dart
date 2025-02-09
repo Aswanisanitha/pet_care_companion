@@ -1,31 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:video_player/video_player.dart';
 
-class traning extends StatefulWidget {
-  const traning({Key? key}) : super(key: key);
+class Training extends StatefulWidget {
+  const Training({Key? key}) : super(key: key);
 
   @override
-  State<traning> createState() => _traningState();
+  State<Training> createState() => _TrainingState();
 }
 
-class _traningState extends State<traning> {
-  List<Map<String, dynamic>> traningList = [];
+class _TrainingState extends State<Training> {
+  List<Map<String, dynamic>> trainingList = [];
+  List<Map<String, dynamic>> typeList = [];
+  List<Map<String, dynamic>> breedList = [];
+
   String? selectedType;
   String? selectedBreed;
 
-  List<Map<String, dynamic>> typeList = [];
-  List<Map<String, dynamic>> breedList = [];
   final supabase = Supabase.instance.client;
 
-  // Fetch Activities
-  Future<void> fetchtraning() async {
+  @override
+  void initState() {
+    super.initState();
+    fetchPetTypes();
+    fetchTraining();
+  }
+
+  // Fetch Training Videos
+  Future<void> fetchTraining() async {
     try {
       final response = await supabase.from('Admin_tbl_traning').select();
       setState(() {
-        traningList = List<Map<String, dynamic>>.from(response);
+        trainingList = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      print('Error fetching traning: $e');
+      print('Error fetching training data: $e');
     }
   }
 
@@ -41,7 +50,7 @@ class _traningState extends State<traning> {
     }
   }
 
-  // Fetch Breeds
+  // Fetch Breeds based on selected Pet Type
   Future<void> fetchBreeds(String typeId) async {
     try {
       final response = await supabase
@@ -57,19 +66,12 @@ class _traningState extends State<traning> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    fetchPetTypes();
-    fetchtraning();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.deepOrange.shade900,
         title: const Text(
-          'Traning Details',
+          'Training Videos',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -87,7 +89,7 @@ class _traningState extends State<traning> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Species Dropdown
+            // Pet Type Dropdown
             DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 labelText: 'Species',
@@ -121,6 +123,7 @@ class _traningState extends State<traning> {
               }).toList(),
             ),
             const SizedBox(height: 16),
+
             // Breed Dropdown
             DropdownButtonFormField<String>(
               decoration: InputDecoration(
@@ -149,59 +152,120 @@ class _traningState extends State<traning> {
                 );
               }).toList(),
             ),
+
             const SizedBox(height: 20),
-            // Activity List
+
+            // Video List (Filtered)
             Expanded(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: traningList
-                      .where((traning) =>
-                          (selectedType == null ||
-                              traning['pettype_id'].toString() ==
-                                  selectedType) &&
-                          (selectedBreed == null ||
-                              traning['breed_id'].toString() == selectedBreed))
-                      .map((traningplan) {
-                    return SizedBox(
-                      width: MediaQuery.of(context).size.width / 2 -
-                          24, // Adjust width
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.model_training,
-                                  color: Colors.deepOrange),
-                              SizedBox(height: 8),
-                              Text(
-                                traningplan['traning_name'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                traningplan['traning_file'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                            ],
+              child: ListView.builder(
+                itemCount: trainingList.length,
+                itemBuilder: (context, index) {
+                  final training = trainingList[index];
+                  final videoUrl =
+                      training['traning_file']; // Video URL from Supabase
+                  final trainingBreedId = training['breed_id'].toString();
+
+                  // Get the breed's pet type from the breed list
+                  final matchingBreed = breedList.firstWhere(
+                    (breed) => breed['id'].toString() == trainingBreedId,
+                    orElse: () => {},
+                  );
+
+                  final trainingPetTypeId = matchingBreed.isNotEmpty
+                      ? matchingBreed['pettype_id'].toString()
+                      : null;
+
+                  // Filtering Logic
+                  if ((selectedType != null &&
+                          trainingPetTypeId != selectedType) ||
+                      (selectedBreed != null &&
+                          trainingBreedId != selectedBreed)) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            training['traning_name'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          VideoPlayerWidget(videoUrl: videoUrl),
+                        ],
                       ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+// Video Player Widget
+class VideoPlayerWidget extends StatefulWidget {
+  final String videoUrl;
+  const VideoPlayerWidget({Key? key, required this.videoUrl}) : super(key: key);
+
+  @override
+  _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        setState(() {
+          _isInitialized = true;
+        });
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isInitialized
+        ? Column(
+            children: [
+              AspectRatio(
+                aspectRatio: _controller.value.aspectRatio,
+                child: VideoPlayer(_controller),
+              ),
+              IconButton(
+                icon: Icon(
+                  _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _controller.value.isPlaying
+                        ? _controller.pause()
+                        : _controller.play();
+                  });
+                },
+              ),
+            ],
+          )
+        : const Center(child: CircularProgressIndicator());
   }
 }

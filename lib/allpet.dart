@@ -45,7 +45,9 @@ class _allpetState extends State<allpet> {
             crossAxisSpacing: 8.0,
             mainAxisSpacing: 8.0,
           ),
+          itemCount: petlist.length,
           itemBuilder: (context, index) {
+            final pet = petlist[index];
             return GestureDetector(
               onTap: () {
                 // Add functionality here, e.g., open the image in fullscreen
@@ -56,12 +58,12 @@ class _allpetState extends State<allpet> {
                   footer: GridTileBar(
                     backgroundColor: Colors.black54,
                     title: Text(
-                      "",
+                      pet['pet_name'],
                       style: TextStyle(fontSize: 14),
                     ),
                   ),
                   child: Image.network(
-                    "",
+                    pet['pet_photo'],
                     fit: BoxFit.cover,
                   ),
                 ),

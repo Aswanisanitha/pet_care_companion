@@ -117,7 +117,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => hospital()),
+                      MaterialPageRoute(builder: (context) => Hospital()),
                     );
                   },
                 ),
@@ -147,7 +147,7 @@ class HomePage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => traning()),
+                      MaterialPageRoute(builder: (context) => Training()),
                     );
                   },
                 ),
