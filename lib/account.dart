@@ -124,7 +124,7 @@ class _accountState extends State<account> {
                   subtitle: "View appointments",
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => appointment()),
+                    MaterialPageRoute(builder: (context) => Appointment()),
                   ),
                 ),
                 _buildListTile(

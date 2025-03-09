@@ -1,7 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/main.dart';
 
-class Complaint extends StatelessWidget {
+class Complaint extends StatefulWidget {
   const Complaint({super.key});
+
+  @override
+  State<Complaint> createState() => _ComplaintState();
+}
+
+class _ComplaintState extends State<Complaint> {
+  final TextEditingController _complainttitle = TextEditingController();
+  final TextEditingController _complaintcontent = TextEditingController();
+
+  Future<void> _addcomplaint() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      await supabase.from('User_tbl_complaint').insert({
+        'complaint_title': _complainttitle.text,
+        'complaint_content': _complaintcontent.text,
+        'complaint_date': DateTime.now().toIso8601String(),
+        'user_id_id': userId,
+      });
+
+      // Refresh the list after adding
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Successfully Added")),
+      );
+    } catch (e) {
+      print('Complaint not added: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error adding complaint: $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +51,7 @@ class Complaint extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextFormField(
+                controller: _complainttitle,
                 decoration: InputDecoration(
                   labelText: "Title",
                   labelStyle: TextStyle(color: Colors.deepOrange.shade900),
@@ -36,6 +70,7 @@ class Complaint extends StatelessWidget {
               ),
               SizedBox(height: 16),
               TextFormField(
+                controller: _complaintcontent,
                 maxLines: 5,
                 decoration: InputDecoration(
                   labelText: "Content",
@@ -56,7 +91,7 @@ class Complaint extends StatelessWidget {
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  // Submit action
+                  _addcomplaint();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepOrange.shade900,

@@ -6,6 +6,7 @@ import 'package:pet_care_companion/main.dart';
 import 'package:pet_care_companion/vaccination.dart';
 
 class addpet extends StatefulWidget {
+  // Renamed for Dart conventions
   const addpet({super.key});
 
   @override
@@ -23,7 +24,7 @@ class _addpetState extends State<addpet> {
 
   List<Map<String, dynamic>> typeList = [];
   List<Map<String, dynamic>> breedList = [];
-  List<Map<String, dynamic>> pets = []; //view pets
+  List<Map<String, dynamic>> pets = [];
 
   File? _image;
   final ImagePicker _picker = ImagePicker();
@@ -45,57 +46,106 @@ class _addpetState extends State<addpet> {
       });
     } catch (e) {
       print('Error fetching pet types: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch pet types: $e')),
+        );
+      }
     }
   }
 
-  // Fetch Breeds
   Future<void> fetchBreeds(String typeId) async {
     try {
       final response = await supabase
           .from('Admin_tbl_breed')
           .select()
           .eq('pettype_id', typeId);
-      print(response);
       setState(() {
         breedList = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
       print('Error fetching breeds: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch breeds: $e')),
+        );
+      }
     }
   }
 
-  Future<void> _addpet() async {
+  Future<void> _addPet() async {
+    // Renamed for consistency
     try {
-      final userid = supabase.auth.currentUser!.id;
+      // Validation
+      if (name.text.isEmpty ||
+          selectedGender.isEmpty ||
+          selectedBreed == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill all required fields')),
+        );
+        return;
+      }
+
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No user logged in')),
+        );
+        return;
+      }
+
       String? photoUrl;
       if (_image != null) {
         photoUrl = await _uploadImage(_image!);
+        if (photoUrl == null) {
+          throw Exception('Image upload failed');
+        }
       }
+
       await supabase.from('User_tbl_pet').insert({
-        'user_id_id': userid,
+        'user_id_id': userId,
         'pet_name': name.text,
-        'pet_age': age.text,
-        'pet_weight': weight.text,
+        'pet_age': int.tryParse(age.text) ?? 0, // Convert to int
+        'pet_weight': double.tryParse(weight.text) ?? 0.0, // Convert to double
         'pet_gender': selectedGender,
         'breed_id': selectedBreed,
         'pet_photo': photoUrl,
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Successfully Added ")),
+        const SnackBar(content: Text('Pet successfully added')),
       );
+
+      // Clear form after successful addition
+      name.clear();
+      age.clear();
+      weight.clear();
+      setState(() {
+        selectedGender = '';
+        selectedType = null;
+        selectedBreed = null;
+        _image = null;
+      });
+
+      // Refresh pet list
+      await fetchPets();
     } catch (e) {
-      print(' Adding pet failed: $e');
+      print('Adding pet failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add pet: $e')),
+        );
+      }
     }
   }
 
-  Future<String?> _uploadImage(File _image) async {
+  Future<String?> _uploadImage(File image) async {
     try {
-      final folderName = "PetDocs"; // Folder name
-      final fileName = "$folderName/${_image.path.split('/').last}";
-      // Adding a unique filename by combining timestamp and original file name
+      final folderName = "PetDocs";
+      final fileName =
+          "$folderName/${DateTime.now().millisecondsSinceEpoch}_${image.path.split('/').last}";
 
-      await supabase.storage.from('petcare').upload(fileName, _image);
-
+      await supabase.storage.from('petcare').upload(fileName, image);
       final imageUrl = supabase.storage.from('petcare').getPublicUrl(fileName);
       return imageUrl;
     } catch (e) {
@@ -104,17 +154,16 @@ class _addpetState extends State<addpet> {
     }
   }
 
-  Future<void> fetchpets() async {
+  Future<void> fetchPets() async {
+    // Renamed for consistency
     try {
-      final userid = supabase.auth.currentUser!.id;
-      if (userid != null) {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
         final response = await supabase
             .from('User_tbl_pet')
             .select(
                 '*, Admin_tbl_breed(breed_name, Admin_tbl_pettype(type_name))')
-            .eq('user_id_id', userid);
-
-        print(response);
+            .eq('user_id_id', userId);
 
         setState(() {
           pets = List<Map<String, dynamic>>.from(response);
@@ -122,6 +171,11 @@ class _addpetState extends State<addpet> {
       }
     } catch (e) {
       print('Error fetching pets: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch pets: $e')),
+        );
+      }
     }
   }
 
@@ -129,7 +183,15 @@ class _addpetState extends State<addpet> {
   void initState() {
     super.initState();
     fetchPetTypes();
-    fetchpets();
+    fetchPets();
+  }
+
+  @override
+  void dispose() {
+    name.dispose();
+    age.dispose();
+    weight.dispose();
+    super.dispose();
   }
 
   @override
@@ -139,18 +201,13 @@ class _addpetState extends State<addpet> {
         backgroundColor: Colors.deepOrange.shade900,
         title: const Text(
           'Add Pet',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
@@ -170,15 +227,12 @@ class _addpetState extends State<addpet> {
                         backgroundColor: Colors.grey.shade300,
                         backgroundImage: _image != null
                             ? FileImage(_image!)
-                            : AssetImage('assets/petmain1.png')
+                            : const AssetImage('assets/petmain1.png')
                                 as ImageProvider,
                       ),
                       if (_image == null)
-                        const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 30,
-                        ),
+                        const Icon(Icons.camera_alt,
+                            color: Colors.white, size: 30),
                     ],
                   ),
                 ),
@@ -186,8 +240,7 @@ class _addpetState extends State<addpet> {
               const SizedBox(height: 20),
               Card(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                    borderRadius: BorderRadius.circular(16)),
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -202,13 +255,16 @@ class _addpetState extends State<addpet> {
                         items: typeList.map((type) {
                           return DropdownMenuItem<String>(
                             value: type['id'].toString(),
-                            child: Text(type['type_name']),
+                            child: Text(type['type_name'] ?? 'Unknown'),
                           );
                         }).toList(),
                         onChanged: (value) {
                           setState(() {
                             selectedType = value;
-                            fetchBreeds(value!);
+                            selectedBreed =
+                                null; // Reset breed when type changes
+                            breedList.clear();
+                            if (value != null) fetchBreeds(value);
                           });
                         },
                       ),
@@ -220,19 +276,17 @@ class _addpetState extends State<addpet> {
                         items: breedList.map((breed) {
                           return DropdownMenuItem<String>(
                             value: breed['id'].toString(),
-                            child: Text(breed['breed_name']),
+                            child: Text(breed['breed_name'] ?? 'Unknown'),
                           );
                         }).toList(),
                         onChanged: (value) {
-                          setState(() {
-                            selectedBreed = value;
-                          });
+                          setState(() => selectedBreed = value);
                         },
                       ),
                       const SizedBox(height: 15),
                       _buildTextField(age, "Age", Icons.cake),
                       const SizedBox(height: 15),
-                      Text("Gender:", style: TextStyle(fontSize: 16)),
+                      const Text("Gender:", style: TextStyle(fontSize: 16)),
                       Row(
                         children: [
                           _buildRadioButton("Male"),
@@ -251,11 +305,10 @@ class _addpetState extends State<addpet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepOrange.shade900,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                        borderRadius: BorderRadius.circular(30)),
                     fixedSize: const Size(200, 40),
                   ),
-                  onPressed: _addpet,
+                  onPressed: _addPet,
                   child: const Text(
                     "Add",
                     style: TextStyle(color: Colors.white, fontSize: 16),
@@ -263,66 +316,77 @@ class _addpetState extends State<addpet> {
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
+              const Text(
                 "Pets:",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: pets.length,
-                itemBuilder: (context, index) {
-                  final pet = pets[index];
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage: pet['pet_photo'] != null
-                                ? NetworkImage(pet['pet_photo'])
-                                : AssetImage('assets/petmain1.png')
-                                    as ImageProvider,
+              pets.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No pets found',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: pets.length,
+                      itemBuilder: (context, index) {
+                        final pet = pets[index];
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          elevation: 4,
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage: pet['pet_photo'] != null
+                                      ? NetworkImage(pet['pet_photo'])
+                                      : const AssetImage('assets/petmain1.png')
+                                          as ImageProvider,
+                                ),
+                                title: Text(pet['pet_name'] ?? 'Unnamed'),
+                                subtitle: Text(
+                                  'Age: ${pet['pet_age'] ?? 'N/A'}, Weight: ${pet['pet_weight'] ?? 'N/A'}kg, Gender: ${pet['pet_gender'] ?? 'N/A'}, Breed: ${pet['Admin_tbl_breed']?['breed_name'] ?? 'N/A'}, Type: ${pet['Admin_tbl_breed']?['Admin_tbl_pettype']?['type_name'] ?? 'N/A'}',
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => petphoto(
+                                              petid: pet['id'].toString()),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text("Add Photo"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Vaccine(
+                                              petid: pet['id'].toString()),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text("Add Vaccine Details"),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          title: Text(pet['pet_name']),
-                          subtitle: Text(
-                              "Age: ${pet['pet_age']}, Weight: ${pet['pet_weight']}kg, Gender: ${pet['pet_gender']},Breed:${pet['Admin_tbl_breed']['breed_name']},PetType:${pet['Admin_tbl_breed']['Admin_tbl_pettype']['type_name']}"),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => petphoto()),
-                                );
-                              },
-                              child: const Text("Add Photo"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          Vaccine(petid: pet['id'].toString())),
-                                );
-                              },
-                              child: const Text("Add Vaccine Details "),
-                            ),
-                          ],
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ],
           ),
         ),
@@ -337,9 +401,7 @@ class _addpetState extends State<addpet> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: Colors.deepOrange.shade900),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.deepOrange.shade900),
@@ -359,9 +421,7 @@ class _addpetState extends State<addpet> {
       value: value,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.deepOrange.shade900),
@@ -378,15 +438,10 @@ class _addpetState extends State<addpet> {
       child: RadioListTile<String>(
         value: gender,
         groupValue: selectedGender,
-        title: Text(
-          gender,
-          style: const TextStyle(fontSize: 14),
-        ),
+        title: Text(gender, style: const TextStyle(fontSize: 14)),
         activeColor: Colors.deepOrange.shade900,
         onChanged: (value) {
-          setState(() {
-            selectedGender = value!;
-          });
+          setState(() => selectedGender = value!);
         },
       ),
     );

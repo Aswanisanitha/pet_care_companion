@@ -18,15 +18,15 @@ class _foodState extends State<food> {
   List<Map<String, dynamic>> breedList = [];
   final supabase = Supabase.instance.client;
 
-  // Fetch Activities
   Future<void> fetchfood() async {
     try {
-      final response = await supabase.from('Admin_tbl_food').select();
+      final response =
+          await supabase.from('Admin_tbl_foodplan').select('*, Admin_tbl_food');
       setState(() {
         foodList = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      print('Error fetching fodd: $e');
+      print('Error fetching food details: $e');
     }
   }
 
@@ -180,22 +180,22 @@ class _foodState extends State<food> {
                               Icon(Icons.fastfood, color: Colors.deepOrange),
                               SizedBox(height: 8),
                               Text(
-                                foodplan['food_name'],
+                                foodplan['Admin_tbl_food']?['food_name'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                foodplan['food_Quantity'],
+                                foodplan['Admin_tbl_food']?['food_Quantity'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                foodplan['food_calories'],
+                                foodplan['Admin_tbl_food']?['food_calories'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                foodplan['food_type'],
+                                foodplan['Admin_tbl_food']?['food_type'],
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ],

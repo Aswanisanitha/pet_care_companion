@@ -9,26 +9,6 @@ class PetProfile extends StatefulWidget {
 }
 
 class _PetProfileState extends State<PetProfile> {
-  Map<String, dynamic>? petprofile;
-  @override
-  void initState() {
-    super.initState();
-    fetchpetprofile();
-  }
-
-  Future<void> fetchpetprofile() async {
-    try {
-      final userid = supabase.auth.currentUser?.id;
-
-      if (userid != null) {
-        final response =
-            await supabase.from('User_tbl_pet').select().eq('user_id', userid);
-      }
-    } catch (e) {
-      print('Error fetching Profile Details: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

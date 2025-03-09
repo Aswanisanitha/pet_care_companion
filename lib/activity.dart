@@ -152,55 +152,61 @@ class _ActivityState extends State<Activity> {
             const SizedBox(height: 20),
             // Activity List
             Expanded(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: activityList
-                      .where((activity) =>
-                          (selectedType == null ||
-                              activity['pettype_id'].toString() ==
-                                  selectedType) &&
-                          (selectedBreed == null ||
-                              activity['breed_id'].toString() == selectedBreed))
-                      .map((activity) {
-                    return SizedBox(
-                      width: MediaQuery.of(context).size.width / 2 -
-                          24, // Adjust width
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.local_activity,
-                                  color: Colors.deepOrange),
-                              SizedBox(height: 8),
-                              Text(
-                                activity['activity_name'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                activity['activity_time'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                activity['activity_details'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
+              child: ListView.builder(
+                itemCount: activityList.length,
+                itemBuilder: (context, index) {
+                  final activity = activityList[index];
+                  final activityBreedId = activity['breed_id'].toString();
+
+                  // Get the breed's pet type from the breed list
+                  final matchingBreed = breedList.firstWhere(
+                    (breed) => breed['id'].toString() == activityBreedId,
+                    orElse: () => {},
+                  );
+
+                  final activityPetTypeId = matchingBreed.isNotEmpty
+                      ? matchingBreed['pettype_id'].toString()
+                      : null;
+
+                  // Filtering Logic
+                  if ((selectedType != null &&
+                          activityPetTypeId != selectedType) ||
+                      (selectedBreed != null &&
+                          activityBreedId != selectedBreed)) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.local_activity, color: Colors.deepOrange),
+                          SizedBox(height: 8),
+                          Text(
+                            activity['activity_name'],
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                        ),
+                          SizedBox(height: 4),
+                          Text(
+                            activity['activity_time'],
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            activity['activity_details'],
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
