@@ -1,67 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class food extends StatefulWidget {
-  const food({Key? key}) : super(key: key);
+class Food extends StatefulWidget {
+  const Food({Key? key}) : super(key: key);
 
   @override
-  State<food> createState() => _foodState();
+  State<Food> createState() => _FoodState();
 }
 
-class _foodState extends State<food> {
+class _FoodState extends State<Food> {
   List<Map<String, dynamic>> foodList = [];
-
+  List<Map<String, dynamic>> filteredFoodList = [];
   String? selectedType;
   String? selectedBreed;
-
   List<Map<String, dynamic>> typeList = [];
   List<Map<String, dynamic>> breedList = [];
   final supabase = Supabase.instance.client;
+  bool isLoading = true;
 
-  Future<void> fetchfood() async {
+  Future<void> fetchFood() async {
     try {
-      final response =
-          await supabase.from('Admin_tbl_foodplan').select('*, Admin_tbl_food');
-      setState(() {
-        foodList = List<Map<String, dynamic>>.from(response);
-      });
+      final response = await supabase.from('Admin_tbl_foodplan').select('''
+            *,
+            Admin_tbl_food(food_name, food_calories, food_type),
+            Admin_tbl_breed!inner(
+              id,
+              breed_name,
+              pettype_id,
+              Admin_tbl_pettype!inner(type_name)
+            )
+          ''');
+
+      if (response != null) {
+        print('Food data: $response');
+        setState(() {
+          foodList = List<Map<String, dynamic>>.from(response);
+          filterFoodPlans();
+          isLoading = false;
+        });
+      } else {
+        print('No data returned from fetchFood');
+        setState(() => isLoading = false);
+      }
     } catch (e) {
       print('Error fetching food details: $e');
+      setState(() => isLoading = false);
     }
   }
 
-  // Fetch Pet Types
   Future<void> fetchPetTypes() async {
     try {
       final response = await supabase.from('Admin_tbl_pettype').select();
-      setState(() {
-        typeList = List<Map<String, dynamic>>.from(response);
-      });
+      if (response != null) {
+        setState(() {
+          typeList = List<Map<String, dynamic>>.from(response);
+        });
+      }
     } catch (e) {
       print('Error fetching pet types: $e');
     }
   }
 
-  // Fetch Breeds
   Future<void> fetchBreeds(String typeId) async {
     try {
       final response = await supabase
           .from('Admin_tbl_breed')
           .select()
           .eq('pettype_id', typeId);
-      setState(() {
-        breedList = List<Map<String, dynamic>>.from(response);
-      });
+      if (response != null) {
+        print('Breed data for type $typeId: $response');
+        setState(() {
+          breedList = List<Map<String, dynamic>>.from(response);
+        });
+      }
     } catch (e) {
       print('Error fetching breeds: $e');
     }
+  }
+
+  Future<void> filterFoodPlans() async {
+    setState(() {
+      filteredFoodList = foodList.where((food) {
+        final breedData = food['Admin_tbl_breed'] as Map<String, dynamic>?;
+
+        // Debugging output
+        print(
+            'Filtering - Selected Type: $selectedType, Selected Breed: $selectedBreed');
+        print('Current food item breed data: $breedData');
+
+        final matchesType = selectedType == null ||
+            (breedData != null &&
+                breedData['pettype_id'].toString() == selectedType);
+        final matchesBreed = selectedBreed == null ||
+            (breedData != null && breedData['id'].toString() == selectedBreed);
+
+        return matchesType && matchesBreed;
+      }).toList();
+
+      print('Filtered food plans: $filteredFoodList');
+    });
   }
 
   @override
   void initState() {
     super.initState();
     fetchPetTypes();
-    fetchfood();
+    fetchFood();
+    filterFoodPlans();
   }
 
   @override
@@ -78,137 +123,140 @@ class _foodState extends State<food> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Species Dropdown
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Species',
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.deepOrange.shade900),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              value: selectedType,
-              hint: const Text("Select Species"),
-              onChanged: (newValue) {
-                setState(() {
-                  selectedType = newValue;
-                  selectedBreed = null;
-                  breedList.clear();
-                });
-                if (newValue != null) {
-                  fetchBreeds(newValue);
-                }
-              },
-              items: typeList.map((type) {
-                return DropdownMenuItem<String>(
-                  value: type['id'].toString(),
-                  child: Text(type['type_name']),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            // Breed Dropdown
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Breed',
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.deepOrange.shade900),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              value: selectedBreed,
-              hint: const Text("Select Breed"),
-              onChanged: (newValue) {
-                setState(() {
-                  selectedBreed = newValue;
-                });
-              },
-              items: breedList.map((breed) {
-                return DropdownMenuItem<String>(
-                  value: breed['id'].toString(),
-                  child: Text(breed['breed_name']),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-            // Activity List
-            Expanded(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: foodList
-                      .where((food) =>
-                          (selectedType == null ||
-                              food['pettype_id'].toString() == selectedType) &&
-                          (selectedBreed == null ||
-                              food['breed_id'].toString() == selectedBreed))
-                      .map((foodplan) {
-                    return SizedBox(
-                      width: MediaQuery.of(context).size.width / 2 -
-                          24, // Adjust width
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.fastfood, color: Colors.deepOrange),
-                              SizedBox(height: 8),
-                              Text(
-                                foodplan['Admin_tbl_food']?['food_name'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                foodplan['Admin_tbl_food']?['food_Quantity'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                foodplan['Admin_tbl_food']?['food_calories'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                foodplan['Admin_tbl_food']?['food_type'],
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Species',
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    );
-                  }).toList(),
-                ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide:
+                            BorderSide(color: Colors.deepOrange.shade900),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    value: selectedType,
+                    hint: const Text("Select Species"),
+                    onChanged: (newValue) {
+                      setState(() {
+                        selectedType = newValue;
+                        selectedBreed = null;
+                        breedList.clear();
+                      });
+                      if (newValue != null) {
+                        fetchBreeds(newValue);
+                      }
+                      filterFoodPlans();
+                    },
+                    items: typeList.map((type) {
+                      return DropdownMenuItem<String>(
+                        value: type['id']?.toString(),
+                        child: Text(type['type_name'] ?? 'Unknown'),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Breed',
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide:
+                            BorderSide(color: Colors.deepOrange.shade900),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    value: selectedBreed,
+                    hint: const Text("Select Breed"),
+                    onChanged: (newValue) {
+                      setState(() {
+                        selectedBreed = newValue;
+                      });
+                      filterFoodPlans();
+                    },
+                    items: breedList.map((breed) {
+                      return DropdownMenuItem<String>(
+                        value: breed['id']?.toString(),
+                        child: Text(breed['breed_name'] ?? 'Unknown'),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: filteredFoodList.map((foodplan) {
+                          final foodData = foodplan['Admin_tbl_food']
+                              as Map<String, dynamic>?;
+                          return SizedBox(
+                            width: MediaQuery.of(context).size.width / 2 - 24,
+                            child: Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.fastfood,
+                                        color: Colors.deepOrange),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      foodData?['food_name'] ?? 'N/A',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      foodplan['food_quantity']?.toString() ??
+                                          'N/A',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      foodData?['food_calories']?.toString() ??
+                                          'N/A',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      foodData?['food_type'] ?? 'N/A',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -361,7 +361,7 @@ class _addpetState extends State<addpet> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => petphoto(
+                                          builder: (context) => PetPhoto(
                                               petid: pet['id'].toString()),
                                         ),
                                       );

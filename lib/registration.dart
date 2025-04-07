@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pet_care_companion/form_validation.dart';
 import 'package:pet_care_companion/login.dart';
 import 'package:pet_care_companion/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,6 +20,7 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController contact = TextEditingController();
   final TextEditingController address = TextEditingController();
   final TextEditingController password = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   File? _image;
   final ImagePicker _picker = ImagePicker();
@@ -109,6 +111,7 @@ class _RegistrationState extends State<Registration> {
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Form(
+          key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               children: [
@@ -140,6 +143,7 @@ class _RegistrationState extends State<Registration> {
                 SizedBox(height: 10),
                 TextFormField(
                   controller: name,
+                  validator: (value) => FormValidation.validateName(value),
                   decoration: InputDecoration(
                     labelText: "Name",
                     prefixIcon: Icon(Icons.person, color: Colors.deepOrange),
@@ -152,6 +156,7 @@ class _RegistrationState extends State<Registration> {
                 SizedBox(height: 30),
                 TextFormField(
                   controller: address,
+                  validator: (value) => FormValidation.validateAddress(value),
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.home, color: Colors.deepOrange),
                     labelText: "Address",
@@ -164,6 +169,7 @@ class _RegistrationState extends State<Registration> {
                 SizedBox(height: 30),
                 TextFormField(
                   controller: contact,
+                  validator: (value) => FormValidation.validateContact(value),
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.phone, color: Colors.deepOrange),
                     labelText: "Contact",
@@ -177,6 +183,7 @@ class _RegistrationState extends State<Registration> {
                 SizedBox(height: 30),
                 TextFormField(
                   controller: email,
+                  validator: (value) => FormValidation.validateEmail(value),
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email, color: Colors.deepOrange),
                     labelText: "Email",
@@ -190,6 +197,7 @@ class _RegistrationState extends State<Registration> {
                 SizedBox(height: 30),
                 TextFormField(
                   controller: password,
+                  validator: (value) => FormValidation.validatePassword(value),
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.lock, color: Colors.deepOrange),
                     labelText: "Password",
@@ -206,7 +214,11 @@ class _RegistrationState extends State<Registration> {
                     fixedSize: const Size(200, 40),
                     backgroundColor: Colors.black,
                   ),
-                  onPressed: _reg,
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _reg();
+                    }
+                  },
                   child: Text(
                     "Sign Up",
                     style: TextStyle(color: Colors.white, fontSize: 18),

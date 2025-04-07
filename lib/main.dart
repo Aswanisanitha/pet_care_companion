@@ -18,6 +18,6 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: FirstPage());
+    return MaterialApp(debugShowCheckedModeBanner: false, home: FirstPage());
   }
 }

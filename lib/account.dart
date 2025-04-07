@@ -4,6 +4,7 @@ import 'package:pet_care_companion/changepswd.dart';
 import 'package:pet_care_companion/complaint.dart';
 import 'package:pet_care_companion/editprofile.dart';
 import 'package:pet_care_companion/feedback.dart';
+import 'package:pet_care_companion/login.dart';
 import 'package:pet_care_companion/main.dart';
 import 'package:pet_care_companion/myappointments.dart';
 import 'package:pet_care_companion/mycomplaints.dart';
@@ -18,6 +19,8 @@ class account extends StatefulWidget {
 
 class _accountState extends State<account> {
   Map<String, dynamic>? profile;
+  bool isLoading = true; // Add loading state
+
   @override
   void initState() {
     super.initState();
@@ -35,11 +38,20 @@ class _accountState extends State<account> {
             .eq('user_id', userid)
             .single();
 
-        setState(() {});
-        profile = response;
+        setState(() {
+          profile = response; // Update profile data
+          isLoading = false; // Set loading to false when data is fetched
+        });
+      } else {
+        setState(() {
+          isLoading = false; // Set loading to false if no user ID
+        });
       }
     } catch (e) {
       print('Error fetching Profile Details: $e');
+      setState(() {
+        isLoading = false; // Set loading to false on error
+      });
     }
   }
 
@@ -53,115 +65,130 @@ class _accountState extends State<account> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Handle back action
             Navigator.pop(context);
           },
         ),
       ),
-      body: Column(
-        children: [
-          // Profile Header
-          Container(
-            color: Colors.deepOrange.shade900,
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: Colors.deepOrange,
+              ),
+            ) // Show loading indicator while fetching
+          : Column(
               children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: NetworkImage(
-                      profile?['user_photo']), // Replace with actual asset
+                // Profile Header
+                Container(
+                  color: Colors.deepOrange.shade900,
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundImage:
+                            profile != null && profile!['user_photo'] != null
+                                ? NetworkImage(profile!['user_photo'])
+                                : const AssetImage('assets/default_avatar.png')
+                                    as ImageProvider, // Fallback image
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile?['user_name'] ?? "User",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            profile?['user_email'] ?? "No email",
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profile?['user_name'] ?? "Loading..",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      profile?['user_email'] ?? "Loading..",
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
+                const SizedBox(height: 20),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildListTile(
+                        context,
+                        icon: Icons.person,
+                        title: "View Profile",
+                        subtitle: "User profile",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => Myprofile()),
+                        ),
+                      ),
+                      _buildListTile(
+                        context,
+                        icon: Icons.pets,
+                        title: "Pet Profile",
+                        subtitle: "Add your pet profile",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => addpet()),
+                        ),
+                      ),
+                      _buildListTile(
+                        context,
+                        icon: Icons.book_sharp,
+                        title: "Bookings",
+                        subtitle: "View appointments",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => Appointment()),
+                        ),
+                      ),
+                      _buildListTile(
+                        context,
+                        icon: Icons.settings,
+                        title: "Settings",
+                        subtitle: "Edit profile, change password",
+                        onTap: () => _showBottomSheet(context, 'Settings', [
+                          {'name': 'Edit Profile', 'page': EditProfile()},
+                          {'name': 'Change Password', 'page': changepassword()},
+                        ]),
+                      ),
+                      _buildListTile(
+                        context,
+                        icon: Icons.contact_support_outlined,
+                        title: "Support Center",
+                        subtitle: "Add your complaints and feedback",
+                        onTap: () =>
+                            _showBottomSheet(context, 'Support Center', [
+                          {'name': 'Report Issue', 'page': Complaint()},
+                          {'name': 'Feedback ', 'page': feedback()},
+                          {'name': 'Complaints', 'page': ComplaintView()},
+                        ]),
+                      ),
+                      _buildListTile(
+                        context,
+                        icon: Icons.logout,
+                        title: "Logout",
+                        subtitle: "Logout from user account",
+                        onTap: () async {
+                          await supabase.auth.signOut();
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const Login()));
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildListTile(
-                  context,
-                  icon: Icons.person,
-                  title: "View Profile",
-                  subtitle: "User profile",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Myprofile()),
-                  ),
-                ),
-                _buildListTile(
-                  context,
-                  icon: Icons.pets,
-                  title: "Pet Profile",
-                  subtitle: "Add your pet profile",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => addpet()),
-                  ),
-                ),
-                _buildListTile(
-                  context,
-                  icon: Icons.book_sharp,
-                  title: "Bookings",
-                  subtitle: "View appointments",
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Appointment()),
-                  ),
-                ),
-                _buildListTile(
-                  context,
-                  icon: Icons.settings,
-                  title: "Settings",
-                  subtitle: "Edit profile, change password",
-                  onTap: () => _showBottomSheet(context, 'Settings', [
-                    {'name': 'Edit Profile', 'page': EditProfile()},
-                    {'name': 'Change Password', 'page': changepassword()},
-                  ]),
-                ),
-                _buildListTile(
-                  context,
-                  icon: Icons.contact_support_outlined,
-                  title: "Support Center",
-                  subtitle: "Add your complaints and feedback",
-                  onTap: () => _showBottomSheet(context, 'Support Center', [
-                    {'name': 'Report Issue', 'page': Complaint()},
-                    {'name': 'Feedback ', 'page': feedback()},
-                    {'name': 'Complaints', 'page': ComplaintView()},
-                  ]),
-                ),
-                _buildListTile(
-                  context,
-                  icon: Icons.logout,
-                  title: "Logout",
-                  subtitle: "Logout from user account",
-                  onTap: () {
-                    // Handle logout
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

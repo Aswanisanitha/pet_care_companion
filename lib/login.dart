@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pet_care_companion/form_validation.dart';
 import 'package:pet_care_companion/home.dart';
 import 'package:pet_care_companion/main.dart';
 import 'package:pet_care_companion/registration.dart';
@@ -14,6 +15,8 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+  bool _obscurePassword = true;
+  final _formKey = GlobalKey<FormState>();
 
   Future<void> signIn() async {
     final AuthResponse res = await supabase.auth.signInWithPassword(
@@ -42,14 +45,17 @@ class _LoginState extends State<Login> {
         padding: const EdgeInsets.all(10.0),
         child: SingleChildScrollView(
           child: Form(
+            key: _formKey,
             child: Column(
               children: [
                 Image.asset(
                   "assets/login1.png",
                 ),
-                // Email TextField with Icon and Focused Border
+                const SizedBox(height: 10),
+                // Email TextField
                 TextFormField(
                   controller: email,
+                  validator: (value) => FormValidation.validateEmail(value),
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.email, color: Colors.deepOrange),
                     labelStyle: TextStyle(color: Colors.black),
@@ -62,10 +68,11 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Password TextField with Icon and Focused Border
+                // Password TextField with Eye Icon
                 TextFormField(
                   controller: password,
-                  obscureText: true,
+                  validator: (value) => FormValidation.validatePassword(value),
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.lock, color: Colors.deepOrange),
                     labelText: "Password",
@@ -75,37 +82,39 @@ class _LoginState extends State<Login> {
                       borderSide:
                           BorderSide(color: Colors.deepOrange, width: 2.0),
                     ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                        color: Colors.deepOrange.shade900,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
                       ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
                 ),
-                const SizedBox(height: 5),
+
+                const SizedBox(height: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     fixedSize: const Size(200, 40),
                     backgroundColor: Colors.black,
                   ),
                   onPressed: () {
-                    signIn();
+                    if (_formKey.currentState!.validate()) {
+                      signIn();
+                    }
                   },
                   child: const Text(
                     "Sign In",
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

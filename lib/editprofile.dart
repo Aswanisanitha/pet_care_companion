@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Add this for image selection
+import 'package:image_picker/image_picker.dart'; // For image selection
 import 'dart:io';
 
 import 'package:pet_care_companion/main.dart'; // For file handling
@@ -16,7 +16,8 @@ class _EditProfileState extends State<EditProfile> {
 
   Map<String, dynamic>? profile;
   File? _image;
-  final ImagePicker _picker = ImagePicker(); // To store the selected image
+  final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false; // Loading state
 
   @override
   void initState() {
@@ -25,6 +26,9 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Future<void> fetchProfile() async {
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
     try {
       final userid = supabase.auth.currentUser?.id;
 
@@ -44,6 +48,10 @@ class _EditProfileState extends State<EditProfile> {
       }
     } catch (e) {
       print('Error fetching Profile Details: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading indicator
+      });
     }
   }
 
@@ -53,37 +61,49 @@ class _EditProfileState extends State<EditProfile> {
 
       if (userid != null) {
         String? photoUrl;
+
         if (_image != null) {
           photoUrl = await _uploadImage(_image!, userid);
-          print("Selected Photo: $photoUrl");
+        } else {
+          photoUrl = profile?['user_photo'];
         }
+
         final updates = {
           'user_name': name.text,
           'user_address': address.text,
           'user_contact': contact.text,
-          'user_photo': photoUrl
+          'user_photo': photoUrl,
         };
 
         await supabase
             .from('Guest_tbl_userreg')
             .update(updates)
             .eq('user_id', userid);
-        fetchProfile();
+
+        await fetchProfile();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully')),
+        );
       }
     } catch (e) {
       print('Error updating Profile Details: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update profile: $e')),
+      );
     }
   }
 
   Future<String?> _uploadImage(File image, String userid) async {
     try {
-      final Foldername = "UserDocs";
-      final fileName = '$Foldername/';
+      final folderName = "UserDocs";
+      final fileName =
+          '$folderName/$userid-${DateTime.now().millisecondsSinceEpoch}.jpg';
 
       await supabase.storage.from('petcare').upload(fileName, image);
 
       final imageUrl = supabase.storage.from('petcare').getPublicUrl(fileName);
-      print("Responsed Image :$imageUrl");
+      print("Uploaded Image URL: $imageUrl");
       return imageUrl;
     } catch (e) {
       print('Image upload failed: $e');
@@ -92,8 +112,7 @@ class _EditProfileState extends State<EditProfile> {
   }
 
   Future<void> _pickImage() async {
-    final pickedImage =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedImage = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedImage != null) {
       setState(() {
@@ -111,65 +130,73 @@ class _EditProfileState extends State<EditProfile> {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           TextButton(
-            onPressed: _edit, // Save action
+            onPressed: _edit,
             child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
+          // Add a button to navigate to Account page (example)
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Profile Picture
-            Container(
-              height: 150,
-              color: Colors.deepOrange.shade900,
-              child: Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _image != null
-                          ? FileImage(_image!) as ImageProvider
-                          : NetworkImage(profile?['user_photo']),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: Colors.white,
-                          child: Icon(Icons.camera_alt,
-                              size: 16, color: Colors.black),
-                        ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator()) // Show loading indicator
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Profile Picture
+                  Container(
+                    height: 150,
+                    color: Colors.deepOrange.shade900,
+                    child: Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundImage: _image != null
+                                ? FileImage(_image!) as ImageProvider
+                                : (profile?['user_photo'] != null
+                                    ? NetworkImage(profile!['user_photo'])
+                                    : const AssetImage(
+                                            'assets/default_profile.png')
+                                        as ImageProvider),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: _pickImage,
+                              child: CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Colors.white,
+                                child: Icon(Icons.camera_alt,
+                                    size: 16, color: Colors.black),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
+                  ),
+                  const SizedBox(height: 20),
 
-            // Form Fields
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTextFormField('Name', name),
-                  const SizedBox(height: 20),
-                  _buildTextFormField('Address', address),
-                  const SizedBox(height: 20),
-                  _buildTextFormField('Phone Number', contact,
-                      keyboardType: TextInputType.phone),
-                  const SizedBox(height: 20),
+                  // Form Fields
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildTextFormField('Name', name),
+                        const SizedBox(height: 20),
+                        _buildTextFormField('Address', address),
+                        const SizedBox(height: 20),
+                        _buildTextFormField('Phone Number', contact,
+                            keyboardType: TextInputType.phone),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
