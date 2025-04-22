@@ -10,28 +10,46 @@ class Myprofile extends StatefulWidget {
 
 class _MyprofileState extends State<Myprofile> {
   Map<String, dynamic>? profile;
+  bool isLoading = true;
+  String? errorMessage;
+
   @override
   void initState() {
     super.initState();
-    fetchprofile();
+    fetchProfile();
   }
 
-  Future<void> fetchprofile() async {
+  Future<void> fetchProfile() async {
     try {
-      final userid = supabase.auth.currentUser?.id;
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
 
-      if (userid != null) {
+      final userId = supabase.auth.currentUser?.id;
+
+      if (userId != null) {
         final response = await supabase
             .from('Guest_tbl_userreg')
             .select()
-            .eq('user_id', userid)
+            .eq('user_id', userId)
             .single();
 
-        setState(() {});
-        profile = response;
+        setState(() {
+          profile = response;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+          errorMessage = 'User not logged in';
+        });
       }
     } catch (e) {
-      print('Error fetching Profile Details: $e');
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Error fetching profile: $e';
+      });
     }
   }
 
@@ -39,7 +57,7 @@ class _MyprofileState extends State<Myprofile> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'My Profile',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
@@ -64,49 +82,66 @@ class _MyprofileState extends State<Myprofile> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Profile Picture
-                Center(
-                  child: Stack(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              spreadRadius: 5,
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : errorMessage != null
+                    ? Center(child: Text(errorMessage!))
+                    : Column(
+                        children: [
+                          // Profile Picture
+                          Center(
+                            child: Stack(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white, width: 4),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        spreadRadius: 5,
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 5),
+                                      ),
+                                    ],
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 60,
+                                    backgroundImage: profile?['user_photo'] !=
+                                                null &&
+                                            profile!['user_photo'].isNotEmpty
+                                        ? NetworkImage(profile!['user_photo'])
+                                        : null,
+                                    backgroundColor: Colors.orange.shade200,
+                                    child: profile?['user_photo'] == null ||
+                                            profile!['user_photo'].isEmpty
+                                        ? const Icon(
+                                            Icons.person,
+                                            size: 60,
+                                            color: Colors.white,
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundImage: NetworkImage(profile?['user_photo']),
-                        ),
+                          ),
+                          const SizedBox(height: 30),
+                          // User Details Section
+                          _buildInfoTile(
+                              Icons.person, profile?['user_name'] ?? 'Unknown'),
+                          const SizedBox(height: 20),
+                          _buildInfoTile(
+                              Icons.email, profile?['user_email'] ?? 'Unknown'),
+                          const SizedBox(height: 20),
+                          _buildInfoTile(Icons.phone,
+                              profile?['user_contact'] ?? 'Unknown'),
+                          const SizedBox(height: 20),
+                          _buildInfoTile(Icons.house,
+                              profile?['user_address'] ?? 'Unknown'),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 30),
-                // User Details Section
-                _buildInfoTile(
-                    Icons.person, profile?['user_name'] ?? 'Loading...'),
-
-                SizedBox(height: 20),
-                _buildInfoTile(
-                    Icons.email, profile?['user_email'] ?? 'Loading...'),
-                SizedBox(height: 20),
-                _buildInfoTile(
-                    Icons.phone, profile?['user_contact'] ?? 'Loading...'),
-                SizedBox(height: 20),
-                _buildInfoTile(
-                    Icons.house, profile?['user_address'] ?? 'Loading...'),
-              ],
-            ),
           ),
         ],
       ),
@@ -118,7 +153,7 @@ class _MyprofileState extends State<Myprofile> {
     return Container(
       width: double.infinity,
       height: 50,
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -127,17 +162,17 @@ class _MyprofileState extends State<Myprofile> {
             color: Colors.black.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 6,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
           Icon(icon, color: Colors.deepOrange.shade900),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Text(
             text,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
